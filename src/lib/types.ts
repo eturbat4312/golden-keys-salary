@@ -55,5 +55,6 @@ export type SummaryRow = {
   total_hours: number;
   total_earned: number;
   total_paid: number;
+  period_balance: number;
   remaining_balance: number;
 };
