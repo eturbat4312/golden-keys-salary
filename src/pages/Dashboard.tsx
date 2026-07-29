@@ -10,6 +10,7 @@ import { loadEmployees, loadExpenses, loadPayments, loadTotals, loadWorkEntries 
 import { chf, DateRangeKey, rangeFromKey, todayIso } from "../lib/format";
 import type { Employee, Expense, Payment, SummaryRow, WorkEntry } from "../lib/types";
 import { env } from "../lib/env";
+import { appLinkLine, appUrl } from "../lib/app-url";
 
 export default function Dashboard() {
   const [rangeKey, setRangeKey] = useState<DateRangeKey>("this_month");
@@ -23,7 +24,7 @@ export default function Dashboard() {
   const [copyLabel, setCopyLabel] = useState("Copy boss link");
   const [loading, setLoading] = useState(true);
   const bossReportPath = "/boss";
-  const bossReportUrl = `${window.location.origin}${bossReportPath}`;
+  const bossReportUrl = appUrl(bossReportPath);
 
   useEffect(() => {
     setLoading(true);
@@ -82,7 +83,8 @@ export default function Dashboard() {
       dailyLines || "No new work or expenses since last payment.",
       "",
       `Remaining balance: ${chf(currentBalance)}`,
-      ...(bossReportUrl ? ["", `Boss report: ${bossReportUrl}`] : [])
+      "",
+      appLinkLine()
     ].join("\n");
   }
 
@@ -100,7 +102,7 @@ export default function Dashboard() {
           <h2 className="text-2xl font-bold text-ink">Dashboard</h2>
           <p className="mt-1 text-sm text-slate-600">Admin view with calculated CHF totals from work entries and payments.</p>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="mobile-action-grid">
           <Link className="btn-secondary" to={bossReportPath} target="_blank" rel="noreferrer">
             <ExternalLink className="h-4 w-4" /> Open boss view
           </Link>
@@ -135,7 +137,21 @@ export default function Dashboard() {
           <h3 className="font-bold text-ink">Payments in selected period</h3>
           <p className="text-sm font-bold text-mint">{chf(totals.paid)}</p>
         </div>
-        <div className="overflow-x-auto">
+        <div className="mobile-card-list">
+          {payments.map((payment) => (
+            <article className="mobile-row-card" key={payment.id}>
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <p className="font-bold text-ink">{payment.employees?.name}</p>
+                  <p className="text-sm text-slate-500">{payment.payment_date} · {payment.payment_method}</p>
+                </div>
+                <p className="text-right font-black text-mint">{chf(Number(payment.amount))}</p>
+              </div>
+              {payment.note && <p className="mt-3 text-sm text-slate-600">{payment.note}</p>}
+            </article>
+          ))}
+        </div>
+        <div className="hidden overflow-x-auto md:block">
           <table className="w-full min-w-[640px] text-left text-sm">
             <thead className="bg-slate-100 text-xs uppercase tracking-wide text-slate-600">
               <tr><th className="px-4 py-3">Date</th><th className="px-4 py-3">Employee</th><th className="px-4 py-3">Method</th><th className="px-4 py-3">Note</th><th className="px-4 py-3 text-right">Amount</th></tr>

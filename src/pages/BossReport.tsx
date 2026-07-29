@@ -7,6 +7,7 @@ import { SetupRequired } from "../components/SetupRequired";
 import { Stat } from "../components/Stat";
 import { SummaryTable } from "../components/SummaryTable";
 import { env, hasSupabaseConfig } from "../lib/env";
+import { appLinkLine } from "../lib/app-url";
 import { chf, DateRangeKey, rangeFromKey, todayIso } from "../lib/format";
 import { loadTotals } from "../lib/data";
 import { supabase } from "../lib/supabase";
@@ -102,7 +103,7 @@ export default function BossReport() {
   }
 
   function sendWhatsApp() {
-    const text = `Golden Keys report (${start} to ${end})\nTo settle now: ${chf(totals.balance)}\nSalary balance: ${chf(totals.salaryBalance)}\nOther expenses total: ${chf(allExpenseTotal)}\n\nSelected period:\nHours: ${totals.hours.toFixed(2)}\nEarned: ${chf(totals.earned)}\nPaid: ${chf(totals.paid)}\nExpenses: ${chf(totals.expenses)}`;
+    const text = `Golden Keys report (${start} to ${end})\nTo settle now: ${chf(totals.balance)}\nSalary balance: ${chf(totals.salaryBalance)}\nOther expenses total: ${chf(allExpenseTotal)}\n\nSelected period:\nHours: ${totals.hours.toFixed(2)}\nEarned: ${chf(totals.earned)}\nPaid: ${chf(totals.paid)}\nExpenses: ${chf(totals.expenses)}\n\n${appLinkLine()}`;
     const number = (env.bossWhatsappNumber || "").replace(/[^\d]/g, "");
     window.open(`https://wa.me/${number}?text=${encodeURIComponent(text)}`, "_blank", "noopener,noreferrer");
   }
@@ -122,7 +123,7 @@ export default function BossReport() {
   if (role !== "boss" && role !== "admin") return <Navigate to="/login" replace />;
 
   return (
-    <main className="min-h-screen bg-slate-50 px-4 py-5">
+    <main className="min-h-screen bg-slate-50 px-3 py-4 sm:px-4 sm:py-5">
       <div className="mx-auto max-w-7xl space-y-5">
         <div className="flex flex-col gap-3 md:flex-row md:items-end md:justify-between">
           <div>
@@ -130,16 +131,16 @@ export default function BossReport() {
             <h1 className="text-2xl font-bold text-ink">Boss report</h1>
             <p className="mt-1 text-sm text-slate-600">Read-only report. No add, edit, or delete actions.</p>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="mobile-action-grid">
             <button className="btn-secondary" onClick={bossLogout}>Log out</button>
             <button className="btn-primary" onClick={sendWhatsApp}><MessageCircle className="h-4 w-4" /> Send via WhatsApp</button>
           </div>
         </div>
         <Filters rangeKey={rangeKey} start={start} end={end} onChange={changeRange} />
-        {error && <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">This report link is invalid or inactive.</div>}
-        <div className="card flex gap-2 overflow-x-auto p-2">
+        {error && <div className="rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-700">Report data could not be loaded.</div>}
+        <div className="card flex snap-x gap-2 overflow-x-auto p-2">
           {bossTabs.map((tab) => (
-            <button key={tab.key} className={activeTab === tab.key ? "btn-primary whitespace-nowrap" : "btn-secondary whitespace-nowrap"} onClick={() => setActiveTab(tab.key)}>
+            <button key={tab.key} className={activeTab === tab.key ? "btn-primary snap-start whitespace-nowrap" : "btn-secondary snap-start whitespace-nowrap"} onClick={() => setActiveTab(tab.key)}>
               {tab.label}
             </button>
           ))}
@@ -188,7 +189,25 @@ function ReadOnlyWork({ entries, employeeName, onClearEmployee }: { entries: Wor
         <h2 className="font-bold">Work history{employeeName ? ` - ${employeeName}` : ""}</h2>
         {employeeName && <button className="btn-secondary self-start sm:self-auto" onClick={onClearEmployee}>All employees</button>}
       </div>
-      <div className="overflow-x-auto">
+      <div className="mobile-card-list">
+        {entries.map((entry) => (
+          <article className="mobile-row-card" key={entry.id}>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="font-bold text-ink">{entry.employees?.name}</p>
+                <p className="text-sm text-slate-500">{entry.work_date}</p>
+              </div>
+              <p className="text-right font-black text-ink">{chf(Number(entry.hours) * Number(entry.hourly_rate))}</p>
+            </div>
+            <div className="mt-4 grid gap-2">
+              <p className="mobile-kv"><span>Hours</span><span>{Number(entry.hours).toFixed(2)}</span></p>
+              <p className="mobile-kv"><span>Rate</span><span>{chf(Number(entry.hourly_rate))}</span></p>
+            </div>
+            {entry.note && <p className="mt-3 text-sm text-slate-600">{entry.note}</p>}
+          </article>
+        ))}
+      </div>
+      <div className="hidden overflow-x-auto md:block">
         <table className="w-full min-w-[720px] text-left text-sm">
           <thead className="bg-slate-100 text-xs uppercase tracking-wide text-slate-600">
             <tr><th className="px-4 py-3">Date</th><th className="px-4 py-3">Employee</th><th className="px-4 py-3 text-right">Hours</th><th className="px-4 py-3 text-right">Rate</th><th className="px-4 py-3 text-right">Salary</th><th className="px-4 py-3">Note</th></tr>
@@ -205,7 +224,21 @@ function ReadOnlyPayments({ payments, title = "Payments" }: { payments: Payment[
   return (
     <section className="card overflow-hidden">
       <h2 className="border-b border-slate-100 px-4 py-3 font-bold">{title}</h2>
-      <div className="overflow-x-auto">
+      <div className="mobile-card-list">
+        {payments.map((payment) => (
+          <article className="mobile-row-card" key={payment.id}>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="font-bold text-ink">{payment.employees?.name}</p>
+                <p className="text-sm text-slate-500">{payment.payment_date} · {payment.payment_method}</p>
+              </div>
+              <p className="text-right font-black text-mint">{chf(Number(payment.amount))}</p>
+            </div>
+            {payment.note && <p className="mt-3 text-sm text-slate-600">{payment.note}</p>}
+          </article>
+        ))}
+      </div>
+      <div className="hidden overflow-x-auto md:block">
         <table className="w-full min-w-[640px] text-left text-sm">
           <thead className="bg-slate-100 text-xs uppercase tracking-wide text-slate-600">
             <tr><th className="px-4 py-3">Date</th><th className="px-4 py-3">Employee</th><th className="px-4 py-3">Method</th><th className="px-4 py-3">Note</th><th className="px-4 py-3 text-right">Amount</th></tr>
@@ -222,7 +255,20 @@ function ReadOnlyExpenses({ expenses }: { expenses: Expense[] }) {
   return (
     <section className="card overflow-hidden">
       <h2 className="border-b border-slate-100 px-4 py-3 font-bold">Expenses</h2>
-      <div className="overflow-x-auto">
+      <div className="mobile-card-list">
+        {expenses.map((expense) => (
+          <article className="mobile-row-card" key={expense.id}>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="font-bold text-ink">{expense.expense_date}</p>
+                <p className="text-sm text-slate-500">{expense.note || "Expense"}</p>
+              </div>
+              <p className="text-right font-black text-coral">{chf(Number(expense.amount))}</p>
+            </div>
+          </article>
+        ))}
+      </div>
+      <div className="hidden overflow-x-auto md:block">
         <table className="w-full min-w-[560px] text-left text-sm">
           <thead className="bg-slate-100 text-xs uppercase tracking-wide text-slate-600">
             <tr><th className="px-4 py-3">Date</th><th className="px-4 py-3">Note</th><th className="px-4 py-3 text-right">Amount</th></tr>

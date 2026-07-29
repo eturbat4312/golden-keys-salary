@@ -12,8 +12,8 @@ export function Filters({
   onChange: (next: { rangeKey?: DateRangeKey; start?: string; end?: string }) => void;
 }) {
   return (
-    <div className="card grid gap-3 p-3 md:grid-cols-[1fr_auto_auto] md:items-end">
-      <label>
+    <div className="card grid grid-cols-2 gap-3 p-3 sm:p-4 md:grid-cols-[1fr_auto_auto] md:items-end">
+      <label className="col-span-2 md:col-span-1">
         <span className="label">Period</span>
         <select className="input mt-1" value={rangeKey} onChange={(event) => onChange({ rangeKey: event.target.value as DateRangeKey })}>
           <option value="this_week">This week</option>
@@ -23,11 +23,11 @@ export function Filters({
           <option value="custom">Custom</option>
         </select>
       </label>
-      <label>
+      <label className="min-w-0">
         <span className="label">Start</span>
         <input className="input mt-1" type="date" value={start} onChange={(event) => onChange({ rangeKey: "custom", start: event.target.value })} />
       </label>
-      <label>
+      <label className="min-w-0">
         <span className="label">End</span>
         <input className="input mt-1" type="date" value={end} onChange={(event) => onChange({ rangeKey: "custom", end: event.target.value })} />
       </label>

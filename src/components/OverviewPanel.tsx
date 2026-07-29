@@ -23,9 +23,9 @@ export function OverviewPanel({
 }) {
   return (
     <section className="grid gap-4 lg:grid-cols-[1.15fr_1fr]">
-      <div className="card border-coral/30 bg-orange-50 p-5">
+      <div className="card border-coral/30 bg-orange-50 p-4 sm:p-5">
         <p className="text-xs font-bold uppercase tracking-wide text-coral">To settle now</p>
-        <p className="mt-2 text-4xl font-black text-ink">{chf(totalOutstanding)}</p>
+        <p className="mt-2 text-3xl font-black text-ink sm:text-4xl">{chf(totalOutstanding)}</p>
         <div className="mt-4 grid gap-2 text-sm sm:grid-cols-2">
           <div className="rounded-md bg-white p-3">
             <p className="text-slate-500">Salary balance</p>
@@ -37,7 +37,7 @@ export function OverviewPanel({
           </div>
         </div>
       </div>
-      <div className="card p-5">
+      <div className="card p-4 sm:p-5">
         <p className="text-xs font-bold uppercase tracking-wide text-mint">Selected period</p>
         <p className="mt-1 text-sm font-semibold text-slate-600">{start} to {end}</p>
         <div className="mt-4 grid grid-cols-2 gap-3 text-sm">

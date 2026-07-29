@@ -3,6 +3,7 @@ import { format, parseISO } from "date-fns";
 import { useNavigate, useParams } from "react-router-dom";
 import { loadEmployees } from "../lib/data";
 import { env } from "../lib/env";
+import { appLinkLine } from "../lib/app-url";
 import { todayIso } from "../lib/format";
 import { supabase } from "../lib/supabase";
 import type { Employee } from "../lib/types";
@@ -80,7 +81,7 @@ export default function WorkEntryForm() {
     const hoursText = Number(work.hours).toFixed(2).replace(/\.00$/, "");
     const noteText = work.note?.trim();
     const workText = noteText ? ` worked on ${noteText}` : " worked";
-    const text = `${employeeName} ${dateText}\nTotal ${hoursText}hrs${workText}`;
+    const text = `${employeeName} ${dateText}\nTotal ${hoursText}hrs${workText}\n\n${appLinkLine()}`;
     window.open(`https://wa.me/${number}?text=${encodeURIComponent(text)}`, "_blank", "noopener,noreferrer");
   }
 
@@ -102,9 +103,9 @@ export default function WorkEntryForm() {
   }
 
   return (
-    <div className={`grid gap-5 ${id ? "mx-auto max-w-xl" : "lg:grid-cols-2"}`}>
-      <section className="card p-4">
-        <h2 className="text-xl font-bold">{id ? "Edit work entry" : "Add work entry"}</h2>
+    <div className={`grid gap-4 sm:gap-5 ${id ? "mx-auto max-w-xl" : "lg:grid-cols-2"}`}>
+      <section className="card p-4 sm:p-5">
+        <h2 className="text-lg font-bold sm:text-xl">{id ? "Edit work entry" : "Add work entry"}</h2>
         {error && <p className="mt-3 rounded-md bg-red-50 p-3 text-sm text-red-700">{error}</p>}
         <label className="mt-4 block">
           <span className="label">Employee</span>
@@ -119,17 +120,17 @@ export default function WorkEntryForm() {
           <label><span className="label">Hourly rate</span><input className="input mt-1" type="text" inputMode="decimal" value={form.hourly_rate} onChange={(event) => setForm({ ...form, hourly_rate: event.target.value })} /></label>
         </div>
         <label className="mt-4 block"><span className="label">Note</span><textarea className="input mt-1 min-h-24" value={form.note} onChange={(event) => setForm({ ...form, note: event.target.value })} /></label>
-        <div className="mt-5 flex gap-2"><button className="btn-primary" onClick={save}>{!id && hasExpenseDraft() ? "Save hours and expense" : "Save hours"}</button><button className="btn-secondary" onClick={() => navigate("/work")}>Cancel</button></div>
+        <div className="mobile-action-grid mt-5"><button className="btn-primary" onClick={save}>{!id && hasExpenseDraft() ? "Save hours and expense" : "Save hours"}</button><button className="btn-secondary" onClick={() => navigate("/work")}>Cancel</button></div>
       </section>
       {!id && (
-        <section className="card p-4">
-          <h2 className="text-xl font-bold">Other expense</h2>
+        <section className="card p-4 sm:p-5">
+          <h2 className="text-lg font-bold sm:text-xl">Other expense</h2>
           {expenseError && <p className="mt-3 rounded-md bg-red-50 p-3 text-sm text-red-700">{expenseError}</p>}
           {savedMessage && <p className="mt-3 rounded-md bg-teal-50 p-3 text-sm text-teal-700">{savedMessage}</p>}
           <label className="mt-4 block"><span className="label">Date</span><input className="input mt-1" type="date" value={expenseForm.expense_date} onChange={(event) => setExpenseForm({ ...expenseForm, expense_date: event.target.value })} /></label>
           <label className="mt-4 block"><span className="label">Amount</span><input className="input mt-1" type="text" inputMode="decimal" value={expenseForm.amount} onChange={(event) => setExpenseForm({ ...expenseForm, amount: event.target.value })} /></label>
           <label className="mt-4 block"><span className="label">Note</span><textarea className="input mt-1 min-h-24" value={expenseForm.note} onChange={(event) => setExpenseForm({ ...expenseForm, note: event.target.value })} /></label>
-          <div className="mt-5 flex gap-2"><button className="btn-primary" onClick={saveExpense}>Save expense</button><button className="btn-secondary" onClick={() => setExpenseForm({ expense_date: form.work_date || todayIso(), amount: "", note: "" })}>Clear</button></div>
+          <div className="mobile-action-grid mt-5"><button className="btn-primary" onClick={saveExpense}>Save expense</button><button className="btn-secondary" onClick={() => setExpenseForm({ expense_date: form.work_date || todayIso(), amount: "", note: "" })}>Clear</button></div>
         </section>
       )}
     </div>
