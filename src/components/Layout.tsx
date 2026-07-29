@@ -1,5 +1,5 @@
 import { LogOut, Menu } from "lucide-react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 
 const nav = [
@@ -13,6 +13,13 @@ const nav = [
 ];
 
 export function Layout({ children }: { children: React.ReactNode }) {
+  const navigate = useNavigate();
+
+  async function logout() {
+    await supabase.auth.signOut();
+    navigate("/login", { replace: true });
+  }
+
   return (
     <div className="min-h-screen bg-slate-50">
       <header className="sticky top-0 z-20 border-b border-slate-200 bg-white/95 backdrop-blur">
@@ -22,7 +29,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <p className="text-xs font-bold uppercase tracking-wide text-mint">Golden Keys</p>
             <h1 className="truncate text-base font-bold text-ink sm:text-lg">Work hours and salary</h1>
           </div>
-          <button className="btn-secondary shrink-0" onClick={() => supabase.auth.signOut()}>
+          <button className="btn-secondary shrink-0" onClick={logout}>
             <LogOut className="h-4 w-4" /> Log out
           </button>
         </div>
