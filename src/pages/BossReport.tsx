@@ -1,6 +1,6 @@
 import { MessageCircle } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { Navigate, useNavigate, useParams } from "react-router-dom";
+import { Navigate, useNavigate } from "react-router-dom";
 import { Filters } from "../components/Filters";
 import { OverviewPanel } from "../components/OverviewPanel";
 import { SetupRequired } from "../components/SetupRequired";
@@ -8,8 +8,9 @@ import { Stat } from "../components/Stat";
 import { SummaryTable } from "../components/SummaryTable";
 import { env, hasSupabaseConfig } from "../lib/env";
 import { chf, DateRangeKey, rangeFromKey, todayIso } from "../lib/format";
-import { loadPublicReport } from "../lib/data";
-import type { SummaryRow, WorkEntry, Payment, Expense } from "../lib/types";
+import { loadTotals } from "../lib/data";
+import { supabase } from "../lib/supabase";
+import type { SummaryRow, WorkEntry, Payment, Expense, Role } from "../lib/types";
 
 type BossTab = "dashboard" | "employees" | "work" | "payments" | "expenses";
 
@@ -22,11 +23,10 @@ const bossTabs: { key: BossTab; label: string }[] = [
 ];
 
 export default function BossReport() {
-  const { token } = useParams();
   const navigate = useNavigate();
-  const reportToken = token || env.bossReportToken || "";
   const initial = rangeFromKey("this_month");
-  const isBossAuthed = localStorage.getItem("boss-session") === "true";
+  const [role, setRole] = useState<Role | null>(null);
+  const [authChecked, setAuthChecked] = useState(false);
   const [activeTab, setActiveTab] = useState<BossTab>("dashboard");
   const [selectedEmployeeId, setSelectedEmployeeId] = useState("");
   const [rangeKey, setRangeKey] = useState<DateRangeKey>("this_month");
@@ -36,28 +36,53 @@ export default function BossReport() {
   const [workEntries, setWorkEntries] = useState<WorkEntry[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [allExpenseTotal, setAllExpenseTotal] = useState(0);
   const [reportBalance, setReportBalance] = useState(0);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!hasSupabaseConfig || !isBossAuthed || !reportToken) {
+    if (!hasSupabaseConfig) {
+      setAuthChecked(true);
+      return;
+    }
+    supabase.auth.getSession().then(async ({ data }) => {
+      if (!data.session) {
+        setAuthChecked(true);
+        setLoading(false);
+        return;
+      }
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("role")
+        .eq("id", data.session.user.id)
+        .single<{ role: Role }>();
+      setRole(profile?.role ?? null);
+      setAuthChecked(true);
+    });
+  }, []);
+
+  useEffect(() => {
+    if (!hasSupabaseConfig || !authChecked || (role !== "boss" && role !== "admin")) {
       setLoading(false);
       return;
     }
     setLoading(true);
     setError("");
-    loadPublicReport(reportToken, start, end)
+    loadTotals(start, end)
       .then((report) => {
-        setSummary(report.summary);
-        setWorkEntries(report.work_entries);
+        const salaryBalance = report.rows.reduce((sum, row) => sum + row.remaining_balance, 0);
+        const allExpenses = report.allExpenses.reduce((sum, expense) => sum + Number(expense.amount), 0);
+        setSummary(report.rows);
+        setWorkEntries(report.workEntries);
         setPayments(report.payments);
         setExpenses(report.expenses);
-        setReportBalance(Number(report.totals.remaining_balance || 0));
+        setAllExpenseTotal(allExpenses);
+        setReportBalance(salaryBalance + allExpenses);
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
-  }, [end, isBossAuthed, reportToken, start]);
+  }, [authChecked, end, role, start]);
 
   const totals = useMemo(() => ({
     hours: summary.reduce((sum, row) => sum + row.total_hours, 0),
@@ -77,13 +102,13 @@ export default function BossReport() {
   }
 
   function sendWhatsApp() {
-    const text = `Golden Keys report (${start} to ${end})\nTo settle now: ${chf(totals.balance)}\nSalary balance: ${chf(totals.salaryBalance)}\nOther expenses total: ${chf(totals.balance - totals.salaryBalance)}\n\nSelected period:\nHours: ${totals.hours.toFixed(2)}\nEarned: ${chf(totals.earned)}\nPaid: ${chf(totals.paid)}\nExpenses: ${chf(totals.expenses)}`;
+    const text = `Golden Keys report (${start} to ${end})\nTo settle now: ${chf(totals.balance)}\nSalary balance: ${chf(totals.salaryBalance)}\nOther expenses total: ${chf(allExpenseTotal)}\n\nSelected period:\nHours: ${totals.hours.toFixed(2)}\nEarned: ${chf(totals.earned)}\nPaid: ${chf(totals.paid)}\nExpenses: ${chf(totals.expenses)}`;
     const number = (env.bossWhatsappNumber || "").replace(/[^\d]/g, "");
     window.open(`https://wa.me/${number}?text=${encodeURIComponent(text)}`, "_blank", "noopener,noreferrer");
   }
 
   function bossLogout() {
-    localStorage.removeItem("boss-session");
+    supabase.auth.signOut();
     navigate("/login", { replace: true });
   }
 
@@ -93,7 +118,8 @@ export default function BossReport() {
   }
 
   if (!hasSupabaseConfig) return <SetupRequired />;
-  if (!isBossAuthed) return <Navigate to="/login" replace />;
+  if (!authChecked) return <div className="p-6 text-sm text-slate-600">Loading...</div>;
+  if (role !== "boss" && role !== "admin") return <Navigate to="/login" replace />;
 
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-5">
@@ -125,7 +151,7 @@ export default function BossReport() {
                 <OverviewPanel
                   totalOutstanding={totals.balance}
                   salaryOutstanding={totals.salaryBalance}
-                  allExpenses={totals.balance - totals.salaryBalance}
+                  allExpenses={allExpenseTotal}
                   periodHours={totals.hours}
                   periodEarned={totals.earned}
                   periodPaid={totals.paid}
@@ -140,10 +166,10 @@ export default function BossReport() {
                   <Stat label="Other expenses" value={chf(totals.expenses)} tone="warm" />
                 </div>
                 <ReadOnlyPayments payments={payments} title="Payments in selected period" />
-                <SummaryTable rows={summary} linkEmployees={false} onEmployeeClick={openEmployeeWork} />
+                <SummaryTable rows={summary} onEmployeeClick={openEmployeeWork} />
               </div>
             )}
-            {activeTab === "employees" && <SummaryTable rows={summary} linkEmployees={false} onEmployeeClick={openEmployeeWork} />}
+            {activeTab === "employees" && <SummaryTable rows={summary} onEmployeeClick={openEmployeeWork} />}
             {activeTab === "work" && <ReadOnlyWork entries={filteredWorkEntries} employeeName={selectedEmployee?.employee_name} onClearEmployee={() => setSelectedEmployeeId("")} />}
             {activeTab === "payments" && <ReadOnlyPayments payments={payments} />}
             {activeTab === "expenses" && <ReadOnlyExpenses expenses={expenses} />}

@@ -1,8 +1,9 @@
 import { FormEvent, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { SetupRequired } from "../components/SetupRequired";
-import { env, hasSupabaseConfig } from "../lib/env";
+import { hasSupabaseConfig } from "../lib/env";
 import { supabase } from "../lib/supabase";
+import type { Role } from "../lib/types";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -14,17 +15,25 @@ export default function Login() {
   async function submit(event: FormEvent) {
     event.preventDefault();
     setError("");
-    if (username.trim() === env.bossUsername && password === env.bossPassword) {
-      localStorage.setItem("boss-session", "true");
-      navigate("/boss", { replace: true });
+    setLoading(true);
+    const { data, error: signInError } = await supabase.auth.signInWithPassword({ email: username.trim(), password });
+    if (signInError || !data.user) {
+      setLoading(false);
+      setError(signInError?.message || "Login failed.");
       return;
     }
 
-    setLoading(true);
-    const { error: signInError } = await supabase.auth.signInWithPassword({ email: username.trim(), password });
+    const { data: profile, error: profileError } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", data.user.id)
+      .single<{ role: Role }>();
     setLoading(false);
-    if (signInError) setError(signInError.message);
-    else navigate("/", { replace: true });
+    if (profileError || !profile) {
+      setError("Your login works, but no app role is assigned.");
+      return;
+    }
+    navigate(profile.role === "boss" ? "/boss" : "/", { replace: true });
   }
 
   if (!hasSupabaseConfig) return <SetupRequired />;

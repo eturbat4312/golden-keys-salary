@@ -229,7 +229,4 @@ $$;
 
 grant execute on function public.get_public_report(text, date, date) to anon;
 
--- Create a boss report token after deploying the migration:
--- insert into public.public_report_links (label, token_hash)
--- values ('Boss WhatsApp report', extensions.crypt('replace-with-a-long-random-token', extensions.gen_salt('bf')));
--- Boss link format: https://your-cloudflare-pages-site.pages.dev/boss/replace-with-a-long-random-token
+-- Boss access is handled through Supabase Auth with the `boss` profile role.

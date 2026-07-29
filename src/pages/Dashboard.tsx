@@ -22,8 +22,8 @@ export default function Dashboard() {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [copyLabel, setCopyLabel] = useState("Copy boss link");
   const [loading, setLoading] = useState(true);
-  const bossReportPath = env.bossReportToken ? "/boss" : "";
-  const bossReportUrl = bossReportPath ? `${window.location.origin}${bossReportPath}` : "";
+  const bossReportPath = "/boss";
+  const bossReportUrl = `${window.location.origin}${bossReportPath}`;
 
   useEffect(() => {
     setLoading(true);
@@ -101,16 +101,12 @@ export default function Dashboard() {
           <p className="mt-1 text-sm text-slate-600">Admin view with calculated CHF totals from work entries and payments.</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          {bossReportPath && (
-            <>
-              <Link className="btn-secondary" to={bossReportPath} target="_blank" rel="noreferrer">
-                <ExternalLink className="h-4 w-4" /> Open boss view
-              </Link>
-              <button className="btn-secondary" onClick={copyBossLink}>
-                <Copy className="h-4 w-4" /> {copyLabel}
-              </button>
-            </>
-          )}
+          <Link className="btn-secondary" to={bossReportPath} target="_blank" rel="noreferrer">
+            <ExternalLink className="h-4 w-4" /> Open boss view
+          </Link>
+          <button className="btn-secondary" onClick={copyBossLink}>
+            <Copy className="h-4 w-4" /> {copyLabel}
+          </button>
           <button className="btn-primary" onClick={sendTodayWhatsApp}>
             <MessageCircle className="h-4 w-4" /> Send today to WhatsApp
           </button>

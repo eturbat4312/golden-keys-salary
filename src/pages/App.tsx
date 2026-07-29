@@ -11,10 +11,11 @@ import Payments from "./Payments";
 import PaymentForm from "./PaymentForm";
 import WorkEntryForm from "./WorkEntryForm";
 import WorkHistory from "./WorkHistory";
+import type { Role } from "../lib/types";
 
 export default function App() {
   const [loading, setLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [role, setRole] = useState<Role | null>(null);
 
   useEffect(() => {
     if (!hasSupabaseConfig) {
@@ -26,8 +27,8 @@ export default function App() {
         setLoading(false);
         return;
       }
-      const { data: profile } = await supabase.from("profiles").select("role").eq("id", data.session.user.id).single();
-      setIsAdmin(profile?.role === "admin");
+      const { data: profile } = await supabase.from("profiles").select("role").eq("id", data.session.user.id).single<{ role: Role }>();
+      setRole(profile?.role ?? null);
       setLoading(false);
     });
   }, []);
@@ -35,7 +36,8 @@ export default function App() {
   const content = useMemo(() => {
     if (!hasSupabaseConfig) return <SetupRequired />;
     if (loading) return <div className="p-6 text-sm text-slate-600">Loading...</div>;
-    if (!isAdmin) return <Navigate to="/login" replace />;
+    if (role === "boss") return <Navigate to="/boss" replace />;
+    if (role !== "admin") return <Navigate to="/login" replace />;
     return (
       <Layout>
         <Routes>
@@ -51,7 +53,7 @@ export default function App() {
         </Routes>
       </Layout>
     );
-  }, [isAdmin, loading]);
+  }, [loading, role]);
 
   return content;
 }

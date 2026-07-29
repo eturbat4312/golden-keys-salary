@@ -1,4 +1,4 @@
-export type Role = "admin";
+export type Role = "admin" | "boss";
 export type PaymentMethod = "cash" | "twint";
 
 export type Employee = {

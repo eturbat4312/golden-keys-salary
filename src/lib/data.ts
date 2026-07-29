@@ -60,7 +60,7 @@ export async function loadTotals(start?: string, end?: string) {
     loadExpenses(start, end),
     loadExpenses()
   ]);
-  return { rows: calculateSummary(employees, workEntries, payments, allWorkEntries, allPayments), payments, expenses, allExpenses };
+  return { rows: calculateSummary(employees, workEntries, payments, allWorkEntries, allPayments), workEntries, payments, expenses, allExpenses };
 }
 
 export function calculateSummary(employees: Employee[], workEntries: WorkEntry[], payments: Payment[], balanceWorkEntries = workEntries, balancePayments = payments): SummaryRow[] {
@@ -93,21 +93,4 @@ export async function getCurrentBalance(employeeId: string) {
   const totalEarned = workEntries.reduce((sum, entry) => sum + Number(entry.hours) * Number(entry.hourly_rate), 0);
   const totalPaid = payments.reduce((sum, payment) => sum + Number(payment.amount), 0);
   return { openingBalance, totalEarned, totalPaid, remaining: openingBalance + totalEarned - totalPaid };
-}
-
-export async function loadPublicReport(token: string, start: string, end: string) {
-  const { data, error } = await supabase.rpc("get_public_report", {
-    link_token: token,
-    start_date: start,
-    end_date: end
-  });
-  if (error) throw error;
-  return data as {
-    range: { start: string; end: string };
-    totals: { total_hours: number; total_earned: number; total_paid: number; remaining_balance: number; total_expenses: number };
-    summary: SummaryRow[];
-    work_entries: WorkEntry[];
-    payments: Payment[];
-    expenses: Expense[];
-  };
 }

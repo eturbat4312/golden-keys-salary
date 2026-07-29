@@ -10,10 +10,7 @@ export function SetupRequired() {
         <pre className="mt-4 overflow-x-auto rounded-md bg-slate-900 p-4 text-sm text-white">
 {`VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your-anon-key
-VITE_BOSS_WHATSAPP_NUMBER=41788664979
-VITE_BOSS_REPORT_TOKEN=make-a-long-random-token
-VITE_BOSS_USERNAME=boss
-VITE_BOSS_PASSWORD=123`}
+VITE_BOSS_WHATSAPP_NUMBER=41788664979`}
         </pre>
         <p className="mt-4 text-sm text-slate-600">After saving `.env`, restart the local dev server.</p>
       </section>

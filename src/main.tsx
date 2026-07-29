@@ -9,7 +9,6 @@ import "./styles.css";
 const router = createBrowserRouter([
   { path: "/login", element: <Login /> },
   { path: "/boss", element: <BossReport /> },
-  { path: "/boss/:token", element: <BossReport /> },
   { path: "/*", element: <App /> }
 ]);
 
