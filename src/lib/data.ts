@@ -73,7 +73,6 @@ export function calculateSummary(employees: Employee[], workEntries: WorkEntry[]
     const total_hours = employeeWork.reduce((sum, entry) => sum + Number(entry.hours), 0);
     const total_earned = employeeWork.reduce((sum, entry) => sum + Number(entry.hours) * Number(entry.hourly_rate), 0);
     const total_paid = employeePayments.reduce((sum, payment) => sum + Number(payment.amount), 0);
-    const period_balance = total_earned - total_paid;
     const balance_earned = employeeBalanceWork.reduce((sum, entry) => sum + Number(entry.hours) * Number(entry.hourly_rate), 0);
     const balance_paid = employeeBalancePayments.reduce((sum, payment) => sum + Number(payment.amount), 0);
     return {
@@ -83,7 +82,6 @@ export function calculateSummary(employees: Employee[], workEntries: WorkEntry[]
       total_hours,
       total_earned,
       total_paid,
-      period_balance,
       remaining_balance: opening_balance + balance_earned - balance_paid
     };
   });
