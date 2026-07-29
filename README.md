@@ -49,3 +49,4 @@ Boss login defaults:
 VITE_BOSS_USERNAME=boss
 VITE_BOSS_PASSWORD=123
 ```
+# golden-keys-salary
